@@ -95,7 +95,6 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void detectFromContentUri(String uri, final Promise promise) {
         try {
-            URL url = new URL(uri);
             FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(BitmapFactory.decodeStream(this.reactContext.getContentResolver().openInputStream(android.net.Uri.parse(uri))));
             Task<FirebaseVisionText> result =
                     detector.processImage(image)
