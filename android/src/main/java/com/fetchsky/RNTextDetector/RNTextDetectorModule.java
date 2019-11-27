@@ -16,6 +16,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
@@ -26,14 +27,10 @@ import java.net.URL;
 
 public class RNTextDetectorModule extends ReactContextBaseJavaModule {
 
-    private final ReactApplicationContext reactContext;
-    private FirebaseVisionTextRecognizer detector;
-
     public RNTextDetectorModule(ReactApplicationContext reactContext) {
         super(reactContext);
-        this.reactContext = reactContext;
         try {
-            detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
+            FirebaseApp.initializeApp(reactContext);
         } catch (IllegalStateException e) {
             e.printStackTrace();
         }
@@ -42,9 +39,9 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void detectFromFile(String uri, final Promise promise) {
         try {
-            FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
+            FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(getReactApplicationContext(), android.net.Uri.parse(uri));
             Task<FirebaseVisionText> result =
-                    detector.processImage(image)
+                    FirebaseVision.getInstance().getOnDeviceTextRecognizer().processImage(image)
                             .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                                 @Override
                                 public void onSuccess(FirebaseVisionText firebaseVisionText) {
@@ -71,7 +68,7 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
             URL url = new URL(uri);
             FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(BitmapFactory.decodeStream(url.openConnection().getInputStream()));
             Task<FirebaseVisionText> result =
-                    detector.processImage(image)
+                    FirebaseVision.getInstance().getOnDeviceTextRecognizer().processImage(image)
                             .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                                 @Override
                                 public void onSuccess(FirebaseVisionText firebaseVisionText) {
@@ -95,7 +92,7 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void detectFromContentUri(String uri, final Promise promise) {
         try {
-            FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(BitmapFactory.decodeStream(this.reactContext.getContentResolver().openInputStream(android.net.Uri.parse(uri))));
+            FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(BitmapFactory.decodeStream(getReactApplicationContext().getContentResolver().openInputStream(android.net.Uri.parse(uri))));
             Task<FirebaseVisionText> result =
                     FirebaseVision.getInstance().getOnDeviceTextRecognizer().processImage(image)
                             .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
