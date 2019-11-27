@@ -97,7 +97,7 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
         try {
             FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(BitmapFactory.decodeStream(this.reactContext.getContentResolver().openInputStream(android.net.Uri.parse(uri))));
             Task<FirebaseVisionText> result =
-                    detector.processImage(image)
+                    FirebaseVision.getInstance().getOnDeviceTextRecognizer().processImage(image)
                             .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                                 @Override
                                 public void onSuccess(FirebaseVisionText firebaseVisionText) {
