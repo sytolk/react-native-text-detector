@@ -26,25 +26,23 @@ import java.net.URL;
 
 public class RNTextDetectorModule extends ReactContextBaseJavaModule {
 
-  private final ReactApplicationContext reactContext;
-  private FirebaseVisionTextRecognizer detector;
-  private FirebaseVisionImage image;
+    private final ReactApplicationContext reactContext;
+    private FirebaseVisionTextRecognizer detector;
 
-  public RNTextDetectorModule(ReactApplicationContext reactContext) {
-    super(reactContext);
-    this.reactContext = reactContext;
-    try {
-        detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
+    public RNTextDetectorModule(ReactApplicationContext reactContext) {
+        super(reactContext);
+        this.reactContext = reactContext;
+        try {
+            detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
     }
-    catch (IllegalStateException e) {
-        e.printStackTrace();
-    }
-  }
 
-  @ReactMethod
+    @ReactMethod
     public void detectFromFile(String uri, final Promise promise) {
         try {
-            image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
+            FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
             Task<FirebaseVisionText> result =
                     detector.processImage(image)
                             .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
@@ -60,7 +58,7 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
                                             e.printStackTrace();
                                             promise.reject(e);
                                         }
-                                    });;
+                                    });
         } catch (IOException e) {
             promise.reject(e);
             e.printStackTrace();
@@ -71,7 +69,7 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
     public void detectFromUri(String uri, final Promise promise) {
         try {
             URL url = new URL(uri);
-            image = FirebaseVisionImage.fromBitmap(BitmapFactory.decodeStream(url.openConnection().getInputStream()));
+            FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(BitmapFactory.decodeStream(url.openConnection().getInputStream()));
             Task<FirebaseVisionText> result =
                     detector.processImage(image)
                             .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
@@ -87,12 +85,58 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
                                             e.printStackTrace();
                                             promise.reject(e);
                                         }
-                                    });;
+                                    });
         } catch (IOException e) {
             promise.reject(e);
             e.printStackTrace();
         }
     }
+
+    @ReactMethod
+    public void detectFromContentUri(String uri, final Promise promise) {
+        try {
+            URL url = new URL(uri);
+            FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(BitmapFactory.decodeStream(this.reactContext.getContentResolver().openInputStream(android.net.Uri.parse(uri))));
+            Task<FirebaseVisionText> result =
+                    detector.processImage(image)
+                            .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
+                                @Override
+                                public void onSuccess(FirebaseVisionText firebaseVisionText) {
+                                    promise.resolve(getDataAsArray(firebaseVisionText));
+                                }
+                            })
+                            .addOnFailureListener(
+                                    new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            e.printStackTrace();
+                                            promise.reject(e);
+                                        }
+                                    });
+        } catch (IOException e) {
+            promise.reject(e);
+            e.printStackTrace();
+        }
+    }
+
+    /*private FirebaseVisionText processVisionImage(FirebaseVisionImage image) {
+        Task<FirebaseVisionText> result =
+                detector.processImage(image)
+                        .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
+                            @Override
+                            public void onSuccess(FirebaseVisionText firebaseVisionText) {
+                                promise.resolve(getDataAsArray(firebaseVisionText));
+                            }
+                        })
+                        .addOnFailureListener(
+                                new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        e.printStackTrace();
+                                        promise.reject(e);
+                                    }
+                                });;
+    }*/
 
     /**
      * Converts firebaseVisionText into a map
@@ -103,12 +147,12 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
     private WritableArray getDataAsArray(FirebaseVisionText firebaseVisionText) {
         WritableArray data = Arguments.createArray();
 
-        for (FirebaseVisionText.TextBlock block: firebaseVisionText.getTextBlocks()) {
+        for (FirebaseVisionText.TextBlock block : firebaseVisionText.getTextBlocks()) {
             WritableArray blockElements = Arguments.createArray();
 
-            for (FirebaseVisionText.Line line: block.getLines()) {
+            for (FirebaseVisionText.Line line : block.getLines()) {
                 WritableArray lineElements = Arguments.createArray();
-                for (FirebaseVisionText.Element element: line.getElements()) {
+                for (FirebaseVisionText.Element element : line.getElements()) {
                     WritableMap e = Arguments.createMap();
 
                     WritableMap eCoordinates = Arguments.createMap();
@@ -157,8 +201,8 @@ public class RNTextDetectorModule extends ReactContextBaseJavaModule {
     }
 
 
-  @Override
-  public String getName() {
-    return "RNTextDetector";
-  }
+    @Override
+    public String getName() {
+        return "RNTextDetector";
+    }
 }
